@@ -1,0 +1,1402 @@
+<!-- WRITING AGENT SITE | Replace video src="" with your actual video files -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pi Writing Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080808;
+    --bg-card: #0F0F0F;
+    --bg-deep: #050505;
+    --fg: #E8E4DC;
+    --accent: #C8B89A;
+    --code: #4AFC98;
+    --border: #2A2A2A;
+    --border-soft: #1E1E1E;
+    --muted: #5A5A5A;
+    --dim: #444;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--fg);
+    /* 中文优先用 Noto Sans SC，英文和数字依然用 JetBrains Mono */
+    font-family: "JetBrains Mono", "Noto Sans SC", ui-monospace, SFMono-Regular, "PingFang SC", "Microsoft YaHei", Menlo, monospace;
+    font-weight: 400;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+
+  /* 中文文本通用调整：字间距收紧、字重略微加大 */
+  :lang(zh), .zh {
+    font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    letter-spacing: 0.02em;
+  }
+  .zh-serif { font-family: "Noto Serif SC", "Songti SC", serif; }
+  .zh-kai   { font-family: "LXGW WenKai", "KaiTi", "楷体", serif; }
+
+  ::selection { background: var(--code); color: #000; }
+
+  a { color: inherit; text-decoration: none; }
+
+  button { font-family: inherit; cursor: pointer; }
+
+  /* ---------- Top marker bar ---------- */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    padding: 16px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    z-index: 100;
+    mix-blend-mode: difference;
+    pointer-events: none;
+  }
+  .topbar .sig { color: var(--accent); }
+
+  /* ---------- SECTION 1 — HERO ---------- */
+  .hero {
+    min-height: 100vh;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 0 24px;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    /* subtle scanline texture */
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        rgba(255,255,255,0.015) 0px,
+        rgba(255,255,255,0.015) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+    pointer-events: none;
+  }
+
+  .hero .mark {
+    position: absolute;
+    top: 48px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .hero .mark span { color: var(--accent); }
+
+  .hero h1 {
+    font-size: clamp(36px, 7.2vw, 80px);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-align: center;
+    color: var(--fg);
+    white-space: nowrap;
+    min-height: 1.2em;
+  }
+
+  .hero h1 .cursor {
+    display: inline-block;
+    width: 0.55ch;
+    height: 0.95em;
+    background: var(--fg);
+    transform: translateY(0.12em);
+    animation: blink 1s steps(2) infinite;
+    margin-left: 0.05em;
+  }
+
+  @keyframes blink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+
+  .hero .subtitle {
+    margin-top: 28px;
+    font-size: clamp(12px, 1.2vw, 15px);
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+    text-align: center;
+  }
+  .hero .subtitle.visible { opacity: 1; }
+
+  .hero .meta {
+    position: absolute;
+    bottom: 100px;
+    left: 32px;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    max-width: 200px;
+    line-height: 1.8;
+  }
+  .hero .meta.right {
+    left: auto;
+    right: 32px;
+    text-align: right;
+  }
+  .hero .meta b { color: var(--fg); font-weight: 400; }
+
+  .hero .scroll-hint {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;           /* 中文需要更大字号 */
+    letter-spacing: 0.35em;    /* 两个汉字拉开更空灵 */
+    color: var(--fg);
+    animation: pulse 2s ease-in-out infinite;
+    font-weight: 400;
+  }
+  .hero .scroll-hint::first-letter { letter-spacing: 0.15em; } /* 箭头不跟随字间距 */
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+
+  /* ---------- SECTION 2 — SCROLL ASSEMBLED IMAGE ---------- */
+  .scroll-scene {
+    height: 250vh;
+    position: relative;
+    background: #000;
+    border-top: 0.5px solid var(--border);
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  .scroll-sticky {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .scroll-label {
+    position: absolute;
+    top: 32px;
+    left: 32px;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+  }
+  .scroll-progress {
+    position: absolute;
+    top: 32px;
+    right: 32px;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .slice-frame {
+    position: relative;
+    width: min(90vw, 1100px);
+    aspect-ratio: 12 / 6;
+    max-height: 65vh;
+  }
+
+  .slice-frame svg.base {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.05;
+  }
+
+  .slice {
+    position: absolute;
+    left: 0;
+    right: 0;
+    overflow: hidden;
+    clip-path: inset(100% 0 0 0);
+    transition: clip-path 300ms cubic-bezier(.2,.8,.2,1);
+  }
+  .slice.on {
+    clip-path: inset(0 0 0 0);
+  }
+  .slice svg {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 1000%; /* 10 slices each 10% tall, we scale whole image */
+  }
+
+  .slice-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+  .slice-overlay.visible { opacity: 1; }
+  .slice-overlay .line {
+    padding: 14px 28px;
+    background: rgba(8,8,8,0.8);
+    border: 0.5px solid var(--border);
+    font-size: clamp(14px, 1.8vw, 22px);
+    letter-spacing: 0.18em;
+    color: var(--fg);
+    backdrop-filter: blur(2px);
+  }
+  .slice-overlay .line span { color: var(--accent); }
+
+  .scroll-counter {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+  }
+  .scroll-counter .tick {
+    width: 18px;
+    height: 2px;
+    background: var(--border);
+    transition: background 200ms;
+  }
+  .scroll-counter .tick.on { background: var(--accent); }
+
+  /* ---------- SECTION 3 — ABOUT ---------- */
+  .about {
+    padding: 140px 64px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    border-bottom: 0.5px solid var(--border);
+    position: relative;
+  }
+
+  .section-index {
+    position: absolute;
+    top: 32px;
+    left: 64px;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+  }
+
+  .about h2 {
+    font-variant: small-caps;
+    font-size: clamp(28px, 3.6vw, 44px);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    color: var(--fg);
+    margin-bottom: 40px;
+    line-height: 1.1;
+  }
+  .about h2::after {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 0.5px;
+    background: var(--accent);
+    margin-top: 24px;
+  }
+
+  .about p {
+    color: #B8B4AC;
+    font-size: 14px;
+    line-height: 1.8;
+    margin-bottom: 24px;
+    max-width: 52ch;
+  }
+  .about p b { color: var(--fg); font-weight: 500; }
+  .about p .accent { color: var(--accent); }
+
+  .about .kv {
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px 24px;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .about .kv dt { color: var(--muted); }
+  .about .kv dd { color: var(--fg); }
+
+  /* terminal */
+  .terminal {
+    background: #0A0A0A;
+    border: 0.5px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    min-height: 480px;
+    align-self: start;
+    position: relative;
+  }
+  .terminal::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border: 0.5px solid #1a1a1a;
+    pointer-events: none;
+    transform: translate(6px, 6px);
+    z-index: -1;
+  }
+
+  .terminal .bar {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 0.5px solid var(--border);
+    gap: 8px;
+    background: #0D0D0D;
+  }
+  .terminal .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #333;
+  }
+  .terminal .dot.r { background: #FF5F56; }
+  .terminal .dot.y { background: #FFBD2E; }
+  .terminal .dot.g { background: #27C93F; }
+  .terminal .bar .label {
+    flex: 1;
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+  .terminal .bar .tag {
+    font-size: 10px;
+    color: var(--code);
+    letter-spacing: 0.1em;
+  }
+
+  .terminal .body {
+    padding: 20px 22px;
+    font-size: 13px;
+    color: var(--code);
+    font-weight: 400;
+    flex: 1;
+    overflow: hidden;
+    min-height: 420px;
+  }
+  .terminal .body .line {
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin-bottom: 8px;
+    line-height: 1.7;
+  }
+  .terminal .body .muted { color: #2a8e5a; }
+  .terminal .body .warn { color: var(--accent); }
+  .terminal .body .prompt { color: #2a8e5a; }
+  .terminal .body .cursor-blink {
+    display: inline-block;
+    width: 8px;
+    height: 1em;
+    background: var(--code);
+    transform: translateY(3px);
+    animation: blink 1s steps(2) infinite;
+  }
+
+  /* ---------- SECTION 4 — DEMO VIDEOS ---------- */
+  .videos {
+    padding: 140px 64px;
+    background: #000;
+    border-bottom: 0.5px solid var(--border);
+    position: relative;
+  }
+  .videos h2 {
+    font-size: clamp(40px, 6vw, 84px);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--fg);
+    margin-bottom: 12px;
+    line-height: 1;
+  }
+  .videos h2 em {
+    font-style: normal;
+    color: var(--accent);
+    font-weight: 300;
+  }
+  .videos .lede {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 64px;
+    max-width: 48ch;
+  }
+
+  .video-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+
+  .video-panel {
+    display: flex;
+    flex-direction: column;
+  }
+  .video-panel .v-label {
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .video-panel .v-label .num { color: var(--accent); }
+  .video-panel .v-label .time { font-variant-numeric: tabular-nums; }
+
+  .video-shell {
+    position: relative;
+    background: #000;
+    border: 0.5px solid #333;
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    overflow: hidden;
+  }
+  .video-shell video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    background: #000;
+  }
+
+  /* placeholder (no video file yet) */
+  .video-shell .placeholder {
+    position: absolute;
+    inset: 0;
+    display: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      repeating-linear-gradient(
+        45deg,
+        #0a0a0a 0px,
+        #0a0a0a 18px,
+        #0d0d0d 18px,
+        #0d0d0d 36px
+      );
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .video-shell .placeholder .ico {
+    font-size: 28px;
+    color: var(--accent);
+    letter-spacing: 0;
+  }
+  .video-shell .placeholder .hint { color: var(--dim); font-size: 10px; }
+
+  .video-shell .v-corners span {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border: 0.5px solid var(--accent);
+  }
+  .video-shell .v-corners span:nth-child(1) { top: 8px; left: 8px; border-right: 0; border-bottom: 0; }
+  .video-shell .v-corners span:nth-child(2) { top: 8px; right: 8px; border-left: 0; border-bottom: 0; }
+  .video-shell .v-corners span:nth-child(3) { bottom: 8px; left: 8px; border-right: 0; border-top: 0; }
+  .video-shell .v-corners span:nth-child(4) { bottom: 8px; right: 8px; border-left: 0; border-top: 0; }
+
+  .video-controls {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 12px 14px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%);
+    opacity: 0;
+    transition: opacity 0.2s;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--fg);
+    pointer-events: none;
+  }
+  .video-shell:hover .video-controls { opacity: 1; pointer-events: auto; }
+  .video-controls button {
+    background: transparent;
+    border: 0.5px solid var(--fg);
+    color: var(--fg);
+    padding: 4px 10px;
+    font-family: inherit;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .video-controls .bar {
+    flex: 1;
+    height: 2px;
+    background: #222;
+    position: relative;
+  }
+  .video-controls .bar i {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: var(--accent);
+    width: 34%;
+  }
+
+  .video-panel .caption {
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    line-height: 1.6;
+  }
+  .video-panel .caption .arrow { color: var(--accent); margin-right: 8px; }
+
+  /* ---------- SECTION 5 — SERVICES ---------- */
+  .services {
+    padding: 140px 64px;
+    border-bottom: 0.5px solid var(--border);
+    position: relative;
+  }
+  .services .heading-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 64px;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  .services h2 {
+    font-size: clamp(36px, 5vw, 64px);
+    font-weight: 500;
+    color: var(--fg);
+    letter-spacing: -0.005em;
+    line-height: 1;
+  }
+  .services .heading-row .sub {
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    color: var(--muted);
+    text-transform: uppercase;
+    max-width: 30ch;
+    line-height: 1.8;
+  }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border-top: 0.5px solid var(--border);
+    border-left: 0.5px solid var(--border);
+  }
+
+  .card {
+    background: var(--bg-card);
+    border-right: 0.5px solid var(--border);
+    border-bottom: 0.5px solid var(--border);
+    padding: 40px 36px 44px;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+    position: relative;
+    min-height: 360px;
+    display: flex;
+    flex-direction: column;
+  }
+  .card.in { opacity: 1; transform: translateY(0); }
+
+  .card .idx {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    margin-bottom: 32px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .card .idx .status { color: var(--code); }
+
+  .card .ico {
+    font-size: 28px;
+    color: var(--accent);
+    margin-bottom: 28px;
+    letter-spacing: 0.1em;
+    font-weight: 300;
+  }
+
+  .card h3 {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--fg);
+    margin-bottom: 16px;
+    letter-spacing: 0.02em;
+  }
+
+  .card p {
+    font-size: 13px;
+    color: #8d8a82;
+    line-height: 1.7;
+    margin-bottom: 24px;
+  }
+
+  .card .mini {
+    margin-top: auto;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding-top: 20px;
+    border-top: 0.5px solid var(--border-soft);
+    display: flex;
+    justify-content: space-between;
+  }
+  .card .mini b { color: var(--accent); font-weight: 400; }
+
+  /* ---------- SECTION 6 — GITHUB CTA ---------- */
+  .cta {
+    background: var(--bg-deep);
+    padding: 140px 64px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .cta h2 {
+    font-size: clamp(48px, 7vw, 96px);
+    font-weight: 500;
+    color: var(--fg);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+  .cta h2 em {
+    font-style: normal;
+    color: var(--accent);
+    font-weight: 300;
+  }
+  .cta .sub {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 48px;
+    max-width: 42ch;
+  }
+  .cta .btn-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    border: 0.5px solid var(--code);
+    color: var(--code);
+    padding: 0.85rem 1.75rem;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    transition: background 0.2s, color 0.2s;
+  }
+  .btn:hover { background: var(--code); color: #000; }
+  .btn.alt {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .btn.alt:hover { background: var(--accent); color: #000; }
+
+  .cta-right {
+    padding: 32px 40px;
+    min-height: 320px;
+    position: relative;
+  }
+  .cta-right::before {
+    content: "/* agent output */";
+    position: absolute;
+    top: 0;
+    left: 40px;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+  }
+  .cta-right .prose {
+    font-size: 16px;
+    line-height: 1.9;
+    color: var(--accent);
+    font-weight: 300;
+    min-height: 260px;
+    padding-top: 20px;
+  }
+  .cta-right .prose .tw-cursor {
+    display: inline-block;
+    width: 9px;
+    height: 1em;
+    background: var(--accent);
+    margin-left: 2px;
+    transform: translateY(3px);
+    animation: blink 1s steps(2) infinite;
+  }
+
+  /* ---------- FOOTER ---------- */
+  footer {
+    padding: 40px 32px 32px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 0.15em;
+    background: var(--bg-deep);
+  }
+  footer .line { margin-bottom: 6px; }
+  footer .dot { margin: 0 10px; color: #2a2a2a; }
+  footer a:hover { color: var(--accent); }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 900px) {
+    .about, .videos, .services, .cta { padding-left: 28px; padding-right: 28px; }
+    .section-index { left: 28px; }
+    .about { grid-template-columns: 1fr; gap: 48px; padding-top: 100px; padding-bottom: 100px; }
+    .video-grid { grid-template-columns: 1fr; gap: 48px; }
+    .card-grid { grid-template-columns: 1fr; }
+    .cta { grid-template-columns: 1fr; gap: 48px; padding-top: 100px; padding-bottom: 100px; }
+    .cta-right { padding: 24px 0 0; }
+    .cta-right::before { left: 0; }
+    .hero .meta { display: none; }
+    .hero h1 { letter-spacing: 0.12em; white-space: normal; }
+    .topbar { padding: 12px 20px; font-size: 9px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div>PI WRITING AGENT <span class="sig">/</span> v0.3</div>
+  <div class="zh">成熟 · 专业 · 可托付的写作智能体</div>
+</div>
+
+<!-- ========== SECTION 1 — HERO ========== -->
+<section class="hero" id="hero">
+  <div class="mark zh">编号 <span>·</span> 00 <span>·</span> 起笔</div>
+
+  <h1 id="heroTitle"><span class="cursor" id="heroCursor"></span></h1>
+
+  <div class="subtitle zh" id="heroSub">成熟 · 专业的写作智能体 &nbsp;·&nbsp; Pi Writing Agent</div>
+
+  <div class="meta zh">
+    <div>体量</div>
+    <div><b>20 万字长篇</b></div>
+    <div style="margin-top:12px">节奏</div>
+    <div><b>短平快 / 长叙事</b></div>
+  </div>
+  <div class="meta right zh">
+    <div>文体</div>
+    <div><b>小说 · 哲思 · 评论</b></div>
+    <div style="margin-top:12px">状态</div>
+    <div><b>书写中…</b></div>
+  </div>
+
+  <div class="scroll-hint zh">↓ 下拉</div>
+</section>
+
+<!-- ========== SECTION 2 — SCROLL ASSEMBLED IMAGE ========== -->
+<section class="scroll-scene" id="scene2">
+  <div class="scroll-sticky">
+    <div class="scroll-label zh">图 01 · 组装中</div>
+    <div class="scroll-progress" id="progLabel">000 / 010</div>
+
+    <div class="slice-frame" id="sliceFrame">
+      <!-- faint base image -->
+      <svg class="base" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <use href="#illo"/>
+      </svg>
+
+      <!-- 10 slice containers, each holds the full image, clipped to a 10% band -->
+      <!-- generated via JS -->
+
+      <div class="slice-overlay" id="sliceOverlay">
+        <div class="line zh"><span>▋</span>&nbsp;代理在写 · <em style="color:var(--accent); font-style:normal">你在思考。</em></div>
+      </div>
+    </div>
+
+    <div class="scroll-counter" id="counter"></div>
+  </div>
+
+  <!-- Hidden defs: the line illustration (hand holding quill, writing) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="illo" viewBox="0 0 1200 600">
+        <!-- paper sheet -->
+        <rect x="60" y="80" width="760" height="440" fill="none" stroke="#E8E4DC" stroke-width="0.8"/>
+        <!-- ruled lines on paper -->
+        <g stroke="#E8E4DC" stroke-width="0.5" opacity="0.35">
+          <line x1="90" y1="140" x2="800" y2="140"/>
+          <line x1="90" y1="180" x2="800" y2="180"/>
+          <line x1="90" y1="220" x2="800" y2="220"/>
+          <line x1="90" y1="260" x2="800" y2="260"/>
+          <line x1="90" y1="300" x2="800" y2="300"/>
+          <line x1="90" y1="340" x2="800" y2="340"/>
+          <line x1="90" y1="380" x2="800" y2="380"/>
+          <line x1="90" y1="420" x2="800" y2="420"/>
+          <line x1="90" y1="460" x2="800" y2="460"/>
+        </g>
+
+        <!-- already-written handwritten squiggles (upper rows) -->
+        <g stroke="#E8E4DC" stroke-width="1.2" fill="none" stroke-linecap="round">
+          <path d="M 100 135 q 10 -10 22 0 t 22 0 t 22 0 t 22 0 t 22 0 q 15 -8 30 2 l 50 -4 q 20 0 35 -4 t 40 0 l 60 2"/>
+          <path d="M 100 175 q 8 -6 18 -2 t 30 -2 l 40 2 q 25 -6 50 -2 t 80 -2 q 20 -4 40 0 l 80 4 q 20 0 45 -4 l 30 2"/>
+          <path d="M 100 215 q 12 -8 26 -2 t 34 -2 q 18 0 38 -4 l 80 2 q 20 -4 50 0 t 90 -4 q 30 0 55 4 l 50 -2"/>
+          <path d="M 100 255 q 10 -8 24 -2 t 32 -2 t 38 -2 q 22 0 45 -4 l 90 2 q 25 -2 55 -6 t 80 2 l 40 -2"/>
+          <path d="M 100 295 q 14 -6 28 -2 l 45 2 q 20 -6 42 -2 t 70 -4 l 80 2 q 25 -2 50 -4 t 90 0 l 50 -2"/>
+          <path d="M 100 335 q 10 -8 22 -4 t 38 -2 l 40 2 q 25 -6 55 -2 t 85 -4 q 30 0 60 4 l 60 -2"/>
+        </g>
+
+        <!-- partially written row (mid) -->
+        <g stroke="#E8E4DC" stroke-width="1.2" fill="none" stroke-linecap="round">
+          <path d="M 100 375 q 10 -6 24 -2 t 32 -2 l 40 0 q 24 -6 48 -2 t 70 -4 l 50 2"/>
+        </g>
+
+        <!-- ink dots / splatters -->
+        <g fill="#E8E4DC">
+          <circle cx="620" cy="378" r="1.2"/>
+          <circle cx="640" cy="382" r="0.8"/>
+          <circle cx="330" cy="462" r="1"/>
+        </g>
+
+        <!-- Hand (minimal line illustration) -->
+        <g fill="none" stroke="#E8E4DC" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <!-- wrist cuff -->
+          <path d="M 560 520 L 760 580 L 820 560 L 700 470 Z"/>
+          <path d="M 580 510 L 620 530 M 600 500 L 640 520"/>
+
+          <!-- palm and fingers gripping quill -->
+          <path d="M 700 470 Q 720 430 760 420 Q 800 414 820 440 Q 840 462 830 486 Q 815 520 780 520"/>
+          <!-- thumb -->
+          <path d="M 700 470 Q 686 450 700 430 Q 716 414 738 424"/>
+          <!-- index finger along quill -->
+          <path d="M 760 420 Q 724 388 682 370"/>
+          <!-- middle finger -->
+          <path d="M 790 430 Q 772 400 752 382"/>
+          <!-- ring finger -->
+          <path d="M 815 450 Q 805 428 790 412"/>
+          <!-- pinky tuck -->
+          <path d="M 828 478 Q 828 460 818 448"/>
+        </g>
+
+        <!-- Quill pen -->
+        <g fill="none" stroke="#E8E4DC" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- shaft -->
+          <line x1="682" y1="370" x2="520" y2="180"/>
+          <line x1="690" y1="378" x2="528" y2="188"/>
+          <!-- nib -->
+          <path d="M 682 370 L 700 372 L 696 382 L 678 378 Z" fill="#E8E4DC"/>
+          <!-- feather barbs -->
+          <path d="M 520 180 q -20 -10 -32 -2 q -14 10 -10 24"/>
+          <path d="M 510 168 q -24 -10 -38 2 q -18 14 -12 30"/>
+          <path d="M 500 156 q -28 -6 -42 8 q -18 18 -10 38"/>
+          <path d="M 490 146 q -30 -2 -44 14 q -16 20 -6 38"/>
+          <path d="M 480 138 q -28 4 -40 22 q -12 18 0 34"/>
+          <!-- feather spine -->
+          <line x1="520" y1="180" x2="460" y2="120"/>
+        </g>
+
+        <!-- Ink pot (left bottom) -->
+        <g fill="none" stroke="#E8E4DC" stroke-width="1.2" stroke-linecap="round">
+          <path d="M 900 500 L 900 540 Q 900 560 930 562 L 1030 562 Q 1060 560 1060 540 L 1060 500 Z"/>
+          <ellipse cx="980" cy="500" rx="80" ry="10"/>
+          <ellipse cx="980" cy="500" rx="50" ry="5" fill="#E8E4DC" fill-opacity="0.3"/>
+          <!-- quill rest -->
+          <line x1="900" y1="500" x2="860" y2="480"/>
+        </g>
+
+        <!-- labels -->
+        <g fill="#C8B89A" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="2">
+          <text x="62" y="70">FIG. 01 — AUTOMATIC HAND</text>
+          <text x="930" y="582" text-anchor="middle">INK 78%</text>
+        </g>
+
+        <!-- crosshair marks -->
+        <g stroke="#C8B89A" stroke-width="0.5">
+          <line x1="1100" y1="100" x2="1120" y2="100"/>
+          <line x1="1110" y1="90" x2="1110" y2="110"/>
+          <line x1="1100" y1="560" x2="1120" y2="560"/>
+          <line x1="1110" y1="550" x2="1110" y2="570"/>
+        </g>
+      </symbol>
+    </defs>
+  </svg>
+</section>
+
+<!-- ========== SECTION 3 — ABOUT ========== -->
+<section class="about" id="about">
+  <div class="section-index zh">§ 02 · 档案</div>
+
+  <div class="about-left">
+    <h2 class="zh">一位成熟的写手</h2>
+    <p class="zh">
+      Pi Writing Agent 是一套<b>成熟、专业的写作智能体</b>——
+      不是玩具式的生成器，而是一位能<span class="accent">端到端交付长篇稿件</span>的写作者。
+      从结构、语气到事实细节，都由它自己把关。
+    </p>
+    <p class="zh">
+      它具备<b>跨文本交叉引用（cross-reference）</b>与<b>事实核验（validation）</b>的能力——
+      在十万字的跨章节之间追踪伏笔、校对人名与时间线；
+      在时事与财经写作中比对来源、给出依据，而不是凭空生成。
+    </p>
+    <p class="zh">
+      它能自如切换多种<b>写作风格与语体</b>：
+      从 20 万字的长篇小说、到 1 万字的哲思随笔、艺术评论与科普长文，
+      也能胜任需要<span class="accent">短平快</span>的政治时事观察与财经分析。
+    </p>
+    <p class="zh">
+      我们同时为客户提供各类<b>文案咨询与整体解决方案</b>——
+      从选题、体例、声调到交付节奏，一条龙。
+    </p>
+
+    <dl class="kv zh">
+      <dt>长篇能力</dt><dd>单项20 万字 / 多卷本</dd>
+      <dt>短篇节奏</dt><dd>小时级交付</dd>
+      <dt>覆盖文体</dt><dd>小说 · 哲思 · 评论 · 时事 · 财经</dd>
+      <dt>核心能力</dt><dd>long memory · state reversion</dd>
+      <dt>交付形式</dt><dd>稿件 + 咨询方案</dd>
+    </dl>
+  </div>
+
+  <div class="terminal" aria-label="agent terminal">
+    <div class="bar">
+      <div class="dot r"></div>
+      <div class="dot y"></div>
+      <div class="dot g"></div>
+      <div class="label">pi— writing- agent</div>
+      <div class="tag">● LIVE</div>
+    </div>
+    <div class="body" id="termBody"></div>
+  </div>
+</section>
+
+<!-- ========== SECTION 4 — VIDEOS ========== -->
+<section class="videos" id="videos">
+  <div class="section-index zh">§ 03 · 展示</div>
+  <h2 class="zh">看它 <em>工作。</em></h2>
+  <div class="lede zh">左侧是设置（大纲输出），右侧是自动写作（写作、编辑与修改）。</div>
+
+  <div class="video-grid">
+    <div class="video-panel">
+      <div class="v-label zh">
+        <span><span class="num">01 —</span> 设置写作参数</span>
+        <span class="time">00:42</span>
+      </div>
+      <div class="video-shell">
+        <!-- REPLACE: add <source src="your-video-file.mp4" type="video/mp4"> inside <video> below -->
+        <video autoplay muted loop playsinline poster=""><source src="mov1.mp4" type="video/mp4"> </video>
+        <div class="placeholder zh">
+          <div class="ico">[ ▶ ]</div>
+          <div>演示 · 编码输入</div>
+          <div class="hint">将 mp4 放入 &lt;video&gt; · 见源代码注释</div>
+        </div>
+        <div class="v-corners"><span></span><span></span><span></span><span></span></div>
+        <div class="video-controls">
+          <button>▶ play</button>
+          <div class="bar"><i></i></div>
+          <button>mute</button>
+        </div>
+      </div>
+      <div class="caption zh"><span class="arrow">→</span>一名开发者打开一个文件，代理已经在阅读。</div>
+    </div>
+
+    <div class="video-panel">
+      <div class="v-label zh">
+        <span><span class="num">02 —</span> 自动写作与编辑、修改</span>
+        <span class="time">01:08</span>
+      </div>
+      <div class="video-shell">
+        <!-- REPLACE: add <source src="your-video-file.mp4" type="video/mp4"> inside <video> below -->
+        <video autoplay muted loop playsinline poster=""> <source src="mov2.mp4" type="video/mp4"></video>
+        <div class="placeholder zh">
+          <div class="ico">[ ▶ ]</div>
+          <div>演示 · 文字输出</div>
+          <div class="hint">将 mp4 放入 &lt;video&gt; · 见源代码注释</div>
+        </div>
+        <div class="v-corners"><span></span><span></span><span></span><span></span></div>
+        <div class="video-controls">
+          <button>▶ play</button>
+          <div class="bar"><i></i></div>
+          <button>mute</button>
+        </div>
+      </div>
+      <div class="caption zh"><span class="arrow">→</span>成品页面自行浮现 — 文档、提交记录、一整段连续的文字。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== SECTION 5 — SERVICES ========== -->
+<section class="services" id="services">
+  <div class="section-index zh">§ 04 · 能力</div>
+
+  <div class="heading-row">
+    <h2 class="zh">它能接下的稿件。</h2>
+    <div class="sub zh">从一整部长篇 · 到一篇清晨的时评 · 一支笔，覆盖全部体裁。</div>
+  </div>
+
+  <div class="card-grid" id="cardGrid">
+    <div class="card">
+      <div class="idx"><span>01 / 04</span><span class="status zh">● 可承接</span></div>
+      <div class="ico">[ ✦ ]</div>
+      <h3 class="zh">长篇小说</h3>
+      <p class="zh">单卷可达 20 万字。人物弧线、伏笔、时间线由 cross-reference 全程维护，章节之间保持连贯的语气与节奏。</p>
+      <div class="mini zh"><span>体量 · 10 万字</span><b>→ /novel</b></div>
+    </div>
+    <div class="card">
+      <div class="idx"><span>02 / 04</span><span class="status zh">● 可承接</span></div>
+      <div class="ico">[ ∴ ]</div>
+      <h3 class="zh">哲思 · 艺术评论</h3>
+      <p class="zh">1 万字量级的长文随笔、艺术评论与科普写作。论证链完整，引证可核，适合严肃刊物与出版物。</p>
+      <div class="mini zh"><span>体量 · 1 万字</span><b>→ /essay</b></div>
+    </div>
+    <div class="card">
+      <div class="idx"><span>03 / 04</span><span class="status zh">● 可承接</span></div>
+      <div class="ico">[ // ]</div>
+      <h3 class="zh">时事 · 财经分析</h3>
+      <p class="zh">短平快的政治时事观察与财经分析。同步 validation 流程 — 来源、数据、时间戳逐项核对，再落笔成文。</p>
+      <div class="mini zh"><span>节奏 · 小时级</span><b>→ /brief</b></div>
+    </div>
+    <div class="card">
+      <div class="idx"><span>04 / 04</span><span class="status zh">● 可承接</span></div>
+      <div class="ico">[ &gt;&gt; ]</div>
+      <h3 class="zh">文案咨询 · 方案</h3>
+      <p class="zh">不只交付文字。我们为客户提供选题、体例、声调与交付节奏的整体咨询，给出量身定制的写作方案。</p>
+      <div class="mini zh"><span>形式 · 咨询 + 稿件</span><b>→ /consult</b></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== SECTION 6 — CTA ========== -->
+<section class="cta" id="cta">
+  <div class="section-index zh">§ 05 · 取走</div>
+
+  <div>
+    <h2 class="zh">在 GitHub <em>读它。</em></h2>
+    <div class="sub zh">demo prompt · 演示流程 · 真实样稿 — 都已公开。</div>
+    <p class="zh" style="font-size:13px;color:#8d8a82;line-height:1.9;margin-bottom:32px;max-width:44ch">
+      我们把 Pi Writing Agent 的 <b style="color:var(--fg)">demo prompt</b> 与
+      完整的 <b style="color:var(--fg)">演示流程</b>公开在 GitHub 仓库里——
+      从立项、分卷、交叉引用到最终成稿，每一步都能复现。
+      如果你需要为自己的项目配一位专业写手，<span class="accent">直接联系我们</span>。
+    </p>
+
+    <div class="btn-row">
+      <a class="btn" href="https://github.com" target="_blank" rel="noopener">★ 在 GitHub 查看 demo</a>
+      <a class="btn alt zh" href="#">→ 咨询写作方案</a>
+    </div>
+  </div>
+
+  <div class="cta-right">
+    <div class="prose" id="twProse"><span class="tw-cursor"></span></div>
+  </div>
+</section>
+
+<footer>
+  <div class="line zh">Pi Writing Agent <span class="dot">·</span> <a href="https://github.com">github.com/pi-writing/agent</a> <span class="dot">·</span> 文案咨询 / 合作洽谈</div>
+  <div class="line" style="color:#2a2a2a">— 完 —</div>
+</footer>
+
+<script>
+/* ---------- HERO TYPEWRITER ---------- */
+(function heroType() {
+  const title = document.getElementById('heroTitle');
+  const cursor = document.getElementById('heroCursor');
+  const sub = document.getElementById('heroSub');
+  const text = 'AUTOMATIC WRITING';
+  let i = 0;
+
+  function type() {
+    if (i >= text.length) {
+      setTimeout(() => sub.classList.add('visible'), 300);
+      return;
+    }
+    const ch = document.createTextNode(text[i]);
+    title.insertBefore(ch, cursor);
+    i++;
+    setTimeout(type, 90 + Math.random() * 70);
+  }
+  setTimeout(type, 600);
+})();
+
+/* ---------- SCROLL-ASSEMBLED IMAGE ---------- */
+(function sliceScene() {
+  const frame = document.getElementById('sliceFrame');
+  const overlay = document.getElementById('sliceOverlay');
+  const counterEl = document.getElementById('counter');
+  const progLabel = document.getElementById('progLabel');
+  const scene = document.getElementById('scene2');
+
+  const N = 10;
+  const slices = [];
+
+  for (let i = 0; i < N; i++) {
+    const s = document.createElement('div');
+    s.className = 'slice';
+    s.style.top = (i * 10) + '%';
+    s.style.height = '10%';
+
+    // full image inside, translated up so this band shows its row
+    const inner = document.createElement('div');
+    inner.style.position = 'absolute';
+    inner.style.left = '0';
+    inner.style.right = '0';
+    inner.style.top = (-i * 100) + '%';
+    inner.style.height = '1000%'; // 10x parent band height
+    inner.innerHTML = '<svg viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%"><use href="#illo"/></svg>';
+
+    s.appendChild(inner);
+    frame.insertBefore(s, overlay);
+    slices.push(s);
+
+    const tick = document.createElement('div');
+    tick.className = 'tick';
+    counterEl.appendChild(tick);
+  }
+  const ticks = counterEl.querySelectorAll('.tick');
+
+  function onScroll() {
+    const rect = scene.getBoundingClientRect();
+    const total = scene.offsetHeight - window.innerHeight;
+    const scrolled = Math.max(0, -rect.top);
+    const progress = Math.max(0, Math.min(1, scrolled / total));
+    const revealed = Math.floor(progress * N);
+    const shown = Math.min(N, revealed + (progress >= 0.001 ? 0 : 0));
+
+    // reveal count = floor(progress * 10); at progress=1 show all
+    const count = progress >= 1 ? N : revealed;
+    slices.forEach((s, i) => {
+      if (i < count) s.classList.add('on'); else s.classList.remove('on');
+    });
+    ticks.forEach((t, i) => {
+      if (i < count) t.classList.add('on'); else t.classList.remove('on');
+    });
+    progLabel.textContent = String(count).padStart(3, '0') + ' / 010';
+
+    if (progress >= 0.98) overlay.classList.add('visible');
+    else overlay.classList.remove('visible');
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  onScroll();
+})();
+
+/* ---------- TERMINAL (Section 3) ---------- */
+(function terminal() {
+  const body = document.getElementById('termBody');
+
+  const sequences = [
+    [
+      { t: '$ pi-agent run --task novel --len 500k', c: 'muted' },
+      { t: '> Pi Writing Agent v2.4 · 启动中…' },
+      { t: '> 载入项目: 《长夜与河》 · 32 章 · 目标 500,000 字' },
+      { t: '> 建立 cross-reference 图谱…' },
+      { t: '  ├─ 人物弧线    · 17 条' , c: 'muted' },
+      { t: '  ├─ 伏笔索引    · 41 处' , c: 'muted' },
+      { t: '  └─ 时间线节点  · 206 个', c: 'muted' },
+      { t: '> validation: 人名 / 地名 / 年代 全部一致', c: 'warn' },
+      { t: '> 正在续写 第 18 章 · 雨夜' },
+      { t: '  “他把信读到第三遍，才意识到——”  ▋', c: 'muted' },
+      { t: '> 本章完成 · 4,820 字 · 风格: 冷静内省', c: 'warn' },
+      { t: '> 队列中还有: 财经周报 · 艺评 3000 字' },
+      { t: '$ _', c: 'muted' },
+    ]
+  ];
+
+  let seqIdx = 0;
+  let lineIdx = 0;
+  let charIdx = 0;
+  let currentLineEl = null;
+
+  function write() {
+    const seq = sequences[seqIdx];
+    if (lineIdx >= seq.length) {
+      setTimeout(() => {
+        body.innerHTML = '';
+        lineIdx = 0; charIdx = 0;
+        currentLineEl = null;
+        write();
+      }, 3000);
+      return;
+    }
+
+    const line = seq[lineIdx];
+    if (!currentLineEl) {
+      currentLineEl = document.createElement('div');
+      currentLineEl.className = 'line' + (line.c ? ' ' + line.c : '');
+      body.appendChild(currentLineEl);
+    }
+
+    if (charIdx < line.t.length) {
+      currentLineEl.textContent += line.t[charIdx];
+      charIdx++;
+      setTimeout(write, 28 + Math.random() * 40);
+    } else {
+      currentLineEl = null;
+      lineIdx++;
+      charIdx = 0;
+      setTimeout(write, 220);
+    }
+  }
+
+  // Start when visible
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        if (!body.dataset.started) {
+          body.dataset.started = '1';
+          write();
+        }
+      }
+    });
+  }, { threshold: 0.2 });
+  io.observe(body);
+})();
+
+/* ---------- SERVICES CARDS (IO stagger) ---------- */
+(function cards() {
+  const grid = document.getElementById('cardGrid');
+  const cards = grid.querySelectorAll('.card');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        cards.forEach((c, i) => {
+          setTimeout(() => c.classList.add('in'), i * 150);
+        });
+        io.disconnect();
+      }
+    });
+  }, { threshold: 0.2 });
+  io.observe(grid);
+})();
+
+/* ---------- CTA TYPEWRITER (word by word, looping) ---------- */
+(function ctaProse() {
+  const el = document.getElementById('twProse');
+  const cursor = '<span class="tw-cursor"></span>';
+
+  const texts = [
+    "——夜里的江面其实没有声音，她后来才明白，声音都在岸上：水与石头的摩擦、旧船板的叹气、远处某扇木门被风推开又合上。他把信读到第三遍，才意识到，信里真正说的，不是那件事。",
+    "当一座美术馆把观众从『看』转变为『被看』，它就悄悄完成了二十世纪最重要的一次权力让渡。这一让渡不在展签上宣告，而在走廊的转角、在光线的下降、在保安不动声色的注视中逐步生效。",
+    "今晨的美股回落并非情绪问题。十年期利率在 4.38% 附近横盘已近两周，而制造业 PMI 的新订单分项连续第三个月走弱——这两条曲线的夹角，才是今天这根阴线真正的作者。",
+    "Pi Writing Agent 承接过一部 47 万字的长篇、一组共 12 篇的艺评专栏，以及每天清晨六点准时发出的财经简报。体量不同，节奏不同，声音不同；但每一份稿件，都经过同一套 cross-reference 与 validation 的流程。"
+  ];
+
+  let ti = 0;
+  function cycle() {
+    const text = texts[ti % texts.length];
+    // 中文按字拆分，英文按词拆分
+    const hasCJK = /[\u4e00-\u9fff]/.test(text);
+    const words = hasCJK ? Array.from(text) : text.split(' ');
+    let wi = 0;
+    el.innerHTML = cursor;
+
+    function step() {
+      if (wi >= words.length) {
+        setTimeout(fadeOut, 3200);
+        return;
+      }
+      const span = document.createElement('span');
+      // 中文按字符输出（不要补空格），英文按词输出（加空格）
+      const isCJK = /[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]/.test(words[wi]);
+      span.textContent = (wi === 0 || isCJK ? '' : ' ') + words[wi];
+      span.style.opacity = '0';
+      span.style.transition = 'opacity 0.4s';
+      el.insertBefore(span, el.querySelector('.tw-cursor'));
+      requestAnimationFrame(() => span.style.opacity = '1');
+      wi++;
+      setTimeout(step, 90 + Math.random() * 70);
+    }
+    function fadeOut() {
+      el.style.transition = 'opacity 0.8s';
+      el.style.opacity = '0';
+      setTimeout(() => {
+        ti++;
+        el.style.opacity = '1';
+        cycle();
+      }, 900);
+    }
+    step();
+  }
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting && !el.dataset.started) {
+        el.dataset.started = '1';
+        cycle();
+      }
+    });
+  }, { threshold: 0.2 });
+  io.observe(el);
+})();
+
+/* ---------- VIDEO CONTROLS (show on hover already via CSS; wire play/pause) ---------- */
+(function videoControls() {
+  document.querySelectorAll('.video-shell').forEach(shell => {
+    const vid = shell.querySelector('video');
+    const btns = shell.querySelectorAll('.video-controls button');
+    if (!vid || btns.length < 2) return;
+    const [playBtn, muteBtn] = btns;
+    playBtn.addEventListener('click', () => {
+      if (vid.paused) { vid.play().catch(()=>{}); playBtn.textContent = '❚❚ pause'; }
+      else { vid.pause(); playBtn.textContent = '▶ play'; }
+    });
+    muteBtn.addEventListener('click', () => {
+      vid.muted = !vid.muted;
+      muteBtn.textContent = vid.muted ? 'mute' : 'unmute';
+    });
+  });
+})();
+
+document.querySelectorAll('.video-shell').forEach(shell => {
+  const video = shell.querySelector('video');
+  const placeholder = shell.querySelector('.placeholder');
+  if (video && placeholder && video.querySelector('source')?.src) {
+    placeholder.style.display = 'none';
+  }
+});
+</script>
+
+</body>
+</html>
